@@ -1,0 +1,26 @@
+- name: Install Mariadb container
+  hosts: local
+  vars:
+    conf_path: /etc/my.cnf
+    src_socket: /data/mariadb_data/mysql.sock
+    link_socket: /var/lib/mysql/mysql.sock
+    user: mysql
+  tasks:
+  - name: Install epel-release package
+    yum: name=epel-release state=latest
+
+  - name: Install required packages
+    yum: name={{ item }} state=latest
+    with_items:
+      - net-tools
+      - lsof 
+      - nmap
+      - mariadb-server
+      - MySQL-python
+
+  - name: Copy mariadb conf
+    copy: src=my.cnf dest={{ conf_path }} mode=0644
+
+  - name: Link mysql socket
+    file: 
+      src={{ src_socket }} dest={{ link_socket }} state=link force=yes

@@ -1,0 +1,57 @@
+- name: Create PHP container
+  hosts: local
+  vars:
+    app_dir: /data/app
+    src_dir: /data/src
+    phpfpm_path: /etc/php-fpm.d/www.conf
+    info_path: /data/app/info.php
+    test_path: /data/app/test-db-conn.php
+    wp_url: https://cn.wordpress.org/wordpress-4.5.3-zh_CN.tar.gz
+    wp_config: /data/app/wp-config.php
+  tasks:
+  - name: Install epel-release packages
+    yum: name=epel-release state=latest 
+
+  - name: Install required packages
+    yum: name={{ item }} state=latest
+    with_items:
+      - net-tools
+      - lsof
+      - nmap
+      - unzip
+      - mariadb
+
+  - name: Install php packages
+    yum: name={{ item }} state=latest
+    with_items:
+      - php
+      - php-mysql
+      - php-fpm
+      - php-gd
+      - php-mbstring
+
+  - name: Create dir
+    file: path={{ item }} state=directory mode=0755
+    with_items:
+      - "{{ app_dir }}"
+      - "{{ src_dir }}"
+
+  - name: Unpack WP package
+    unarchive: src={{ wp_url }} dest={{ src_dir }} remote_src=yes
+
+  - name: Move WP source code to app_dir
+    shell: "shopt -s dotglob && mv {{ src_dir }}/wordpress/* {{ app_dir }}" 
+
+  - name: Copy wp configuration
+    copy: src=wp-config.php dest={{ wp_config }}
+
+  - name: Copy php info page
+    copy: src=info.php dest={{ info_path }} mode=0755
+
+  - name: Copy test-db-conn page
+    copy: src=test-db-conn.php dest={{ test_path }} mode=0755
+
+  - name: Copy nginx configuration
+    copy: src=www.conf dest={{ phpfpm_path }} mode=0755
+
+ 
